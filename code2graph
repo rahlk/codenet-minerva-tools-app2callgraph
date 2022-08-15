@@ -1,0 +1,17 @@
+#!/usr/bin/env sh
+
+ARGS=""
+while [ "$1" != "" ]; do
+    case "$1" in
+    # Quote arguments with spaces.
+    *\ *)
+        ARGS="${ARGS} '$1'"
+        ;;
+    *)
+        ARGS="${ARGS} $1"
+        ;;
+    esac
+    shift
+done
+
+eval "./gradlew --quiet clean code2graph -Pargs=\"$ARGS\""

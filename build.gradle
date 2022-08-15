@@ -1,0 +1,77 @@
+plugins {
+  id "org.mikeneck.graalvm-native-image" version "1.4.1"
+}
+
+apply plugin: 'java-library'
+apply plugin: 'application'
+apply plugin: 'eclipse'
+
+sourceCompatibility = 1.11
+version = '1.0-dev'
+
+repositories {
+    mavenCentral()
+}
+
+if (project.hasProperty('mainClass')) {
+    mainClassName = project.getProperty('mainClass')
+} else {
+    // use a default
+    mainClassName = "io.tackle.dgi.code2graph.Main"
+}
+
+dependencies {
+    // This dependency is used internally, and not exposed to consumers on their own compile classpath.
+    implementation 'org.apache.commons:commons-math3:3.6.1'
+    implementation group: 'commons-cli', name: 'commons-cli', version: '1.4'
+
+    implementation 'commons-io:commons-io:2.8.0'
+
+    implementation 'org.apache.logging.log4j:log4j-api:2.18.0'
+    implementation 'org.apache.logging.log4j:log4j-core:2.18.0'
+    def walaVersion = '1.5.7'
+
+    // implementation "com.ibm.wala:com.ibm.wala.shrike:${walaVersion}"
+    implementation "com.ibm.wala:com.ibm.wala.util:${walaVersion}"
+    implementation "com.ibm.wala:com.ibm.wala.core:${walaVersion}"
+    implementation "com.ibm.wala:com.ibm.wala.cast:${walaVersion}"
+    implementation "com.ibm.wala:com.ibm.wala.cast.java:${walaVersion}"
+    implementation "com.ibm.wala:com.ibm.wala.cast.java.ecj:${walaVersion}"
+
+    testImplementation group: 'junit', name: 'junit', version: '4.+'
+}
+
+task fatjar(type: Jar) {
+    archiveBaseName = 'code2graph'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    manifest {
+        attributes  'Implementation-Title': 'Tackle DGI WALA Code2graph',
+                    'Implementation-Version': archiveVersion,
+                    'Main-Class': 'io.tackle.dgi.code2graph.Main'
+    }
+    from { configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
+
+task propertyTypes(){
+    doLast{
+        if (project.hasProperty("args")) {
+            println "Our input argument with project property ["+project.getProperty("args")+"]"
+        }
+        println "Our input argument with system property ["+System.getProperty("args")+"]"
+    }
+}
+
+
+if (project.hasProperty("args")) {
+    ext.cmdargs = project.getProperty("args")
+} else { 
+    ext.cmdargs = ""
+}
+task code2graph(type: JavaExec) {
+    group = "Execution"
+    description = "WALA code to system dependency graph"
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = mainClassName
+    args cmdargs.split()
+}
