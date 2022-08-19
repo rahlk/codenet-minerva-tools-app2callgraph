@@ -33,7 +33,7 @@ public class ScopeUtils {
         AnalysisScope scope = new JavaSourceAnalysisScope();
         scope = addDefaultExclusions(scope);
         // add standard libraries to scope
-        String[] stdlibs = WalaProperties.getJ2EEJarFiles();
+        String[] stdlibs = WalaProperties.getJ2SEJarFiles();
         for (String stdlib : stdlibs) {
             scope.addToScope(ClassLoaderReference.Primordial, new JarFile(stdlib));
         }

@@ -32,7 +32,7 @@ public class Main {
     /**
      * Convert source code (project folder) to a neo4j graph.
      * 
-     * usage: java -jar code2graph.jar [-b <arg>] [-h] [-i <arg>] [-q]
+     * usage: ./code2graph [-b <arg>] [-h] [-i <arg>] [-q]
      * 
      * 
      * -h,--help Print this help message.
