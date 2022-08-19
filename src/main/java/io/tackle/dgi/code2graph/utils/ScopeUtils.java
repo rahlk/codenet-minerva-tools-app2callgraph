@@ -20,6 +20,7 @@ import com.ibm.wala.util.config.FileOfClasses;
 public class ScopeUtils {
 
     private static Path workDir = Path.of("/tmp/code2graph-tmp");
+    public static String[] stdLibs;
 
     /**
      * Create an analysis scope base on the input
@@ -28,6 +29,7 @@ public class ScopeUtils {
      * @return scope The created analysis scope
      * @throws IOException
      */
+
     public static AnalysisScope createScope(String inputs) throws IOException {
         Log.toConsole("Create analysis scope.");
         AnalysisScope scope = new JavaSourceAnalysisScope();
@@ -37,7 +39,7 @@ public class ScopeUtils {
         for (String stdlib : stdlibs) {
             scope.addToScope(ClassLoaderReference.Primordial, new JarFile(stdlib));
         }
-
+        setStdLibs(stdlibs);
         String[] sourceDirs = inputs.split(":");
         for (String sourceDir : sourceDirs) {
             // add the source directory
@@ -60,6 +62,14 @@ public class ScopeUtils {
         Log.toConsole("Add exclusions to scope.");
         scope.setExclusions(new FileOfClasses(new ByteArrayInputStream(EXCLUSIONS.getBytes("UTF-8"))));
         return scope;
+    }
+
+    private static void setStdLibs(String[] stdlibs) {
+        stdLibs = stdlibs;
+    }
+
+    public static String[] getStdLibs() {
+        return stdLibs;
     }
 
     private static final String EXCLUSIONS = "java\\/awt\\/.*\n" + "javax\\/awt\\/.*\n" + "javax\\/swing\\/.*\n"
