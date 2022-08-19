@@ -19,14 +19,19 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 
+import com.ibm.wala.cast.java.loader.JavaSourceLoaderImpl;
 import com.ibm.wala.cast.java.translator.jdt.ecj.ECJClassLoaderFactory;
+import com.ibm.wala.classLoader.IClassLoader;
 import com.ibm.wala.ipa.callgraph.AnalysisScope;
 import com.ibm.wala.ipa.cha.ClassHierarchyFactory;
 import com.ibm.wala.ipa.cha.IClassHierarchy;
+import com.ibm.wala.types.ClassLoaderReference;
 import com.ibm.wala.ipa.cha.ClassHierarchyException;
 
 import io.tackle.dgi.code2graph.utils.Log;
 import io.tackle.dgi.code2graph.utils.ScopeUtils;
+
+import io.tackle.dgi.code2graph.CustomECJSourceLoaderImpl;
 
 public class Main {
     /**
@@ -86,13 +91,23 @@ public class Main {
      */
     private static void run(CommandLine cmd) throws Exception {
 
-        AnalysisScope scope = ScopeUtils.createScope(cmd.getOptionValue("source-dir"));
+        String sourceDir = cmd.getOptionValue("source-dir");
+        AnalysisScope scope = ScopeUtils.createScope(sourceDir);
 
         // Make class Heirarchy
 
         Log.toConsole("Make class hierarchy.");
         try {
-            IClassHierarchy cha = ClassHierarchyFactory.make(scope, new ECJClassLoaderFactory(scope.getExclusions()));
+            IClassHierarchy cha = ClassHierarchyFactory.make(scope,
+                    new ECJClassLoaderFactory(scope.getExclusions()) {
+                        @Override
+                        protected JavaSourceLoaderImpl makeSourceLoader(ClassLoaderReference classLoaderReference,
+                                IClassHierarchy cha, IClassLoader parent) {
+                            // TODO: Why do these lines fix issue #1
+                            return new CustomECJSourceLoaderImpl(classLoaderReference, parent, cha,
+                                    ScopeUtils.getStdLibs());
+                        }
+                    });
             Log.toConsole("Done class hierarchy: " + cha.getNumberOfClasses() + " classes");
         } catch (ClassHierarchyException che) {
             che.printStackTrace();
