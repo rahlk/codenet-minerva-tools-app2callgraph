@@ -13,49 +13,45 @@ limitations under the License.
 
 package io.tackle.dgi.code2graph;
 
+import com.ibm.wala.cast.java.loader.JavaSourceLoaderImpl;
+import com.ibm.wala.cast.java.translator.jdt.ecj.ECJClassLoaderFactory;
+import com.ibm.wala.classLoader.IClassLoader;
+import com.ibm.wala.ipa.callgraph.AnalysisScope;
+import com.ibm.wala.ipa.cha.ClassHierarchyException;
+import com.ibm.wala.ipa.cha.ClassHierarchyFactory;
+import com.ibm.wala.ipa.cha.IClassHierarchy;
+import com.ibm.wala.types.ClassLoaderReference;
+import io.tackle.dgi.code2graph.utils.Log;
+import io.tackle.dgi.code2graph.utils.ScopeUtils;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 
-import com.ibm.wala.cast.java.loader.JavaSourceLoaderImpl;
-import com.ibm.wala.cast.java.translator.jdt.ecj.ECJClassLoaderFactory;
-import com.ibm.wala.classLoader.IClassLoader;
-import com.ibm.wala.ipa.callgraph.AnalysisScope;
-import com.ibm.wala.ipa.cha.ClassHierarchyFactory;
-import com.ibm.wala.ipa.cha.IClassHierarchy;
-import com.ibm.wala.types.ClassLoaderReference;
-import com.ibm.wala.ipa.cha.ClassHierarchyException;
-
-import io.tackle.dgi.code2graph.utils.Log;
-import io.tackle.dgi.code2graph.utils.ScopeUtils;
-
-import io.tackle.dgi.code2graph.CustomECJSourceLoaderImpl;
-
 public class Main {
     /**
-     * Convert source code (project folder) to a neo4j graph.
-     * 
-     * usage: ./code2graph [-b <arg>] [-h] [-i <arg>] [-q]
-     * 
+     * Convert java binary (*.jar, *.ear, *.war) to a neo4j graph.
+     *
+     * usage: ./code2graph [-h] [-q] [-i <arg>] [-o <arg>]
      * 
      * -h,--help Print this help message.
-     * -i,--input <arg> Path to the source directory root.
      * -q,--quiet Don't print logs to console.
+     * -i,--input <arg> Path to the input jar.
+     * -o,--output <arg> Destination to save the output graph (as json).
      */
     public static void main(String... args) {
         // Set Log Level
-        Log.setLogLevel("INFO");
         Options options = new Options();
-        options.addOption("s", "source-dir", true, "Path to the source directory root.");
+        options.addOption("i", "input", true, "Path to the input jar.");
+        options.addOption("o", "output", true, "Destination to save the output graph (as json).");
         options.addOption("q", "quiet", false, "Don't print logs to console.");
         options.addOption("h", "help", false, "Print this help message.");
         CommandLineParser parser = new DefaultParser();
 
         CommandLine cmd = null;
 
-        String header = "Convert source code (project folder) to a neo4j graph.\n\n";
+        String header = "Convert java binary (*.jar, *.ear, *.war) to a neo4j graph.\n\n";
         HelpFormatter hf = new HelpFormatter();
 
         try {
@@ -67,9 +63,9 @@ public class Main {
             if (cmd.hasOption("quiet")) {
                 Log.setVerbosity(false);
             }
-            if (!cmd.hasOption("source-dir")) {
+            if (!cmd.hasOption("input")) {
                 throw new RuntimeException(
-                        "[Runtime Exception] Need to provide the path to project source directory.\n\n");
+                        "[Runtime Exception] Need to provide an input JAR to process.\n\n");
             }
         } catch (Exception e) {
             System.err.println(e.getMessage());
@@ -91,24 +87,15 @@ public class Main {
      */
     private static void run(CommandLine cmd) throws Exception {
 
-        String sourceDir = cmd.getOptionValue("source-dir");
-        AnalysisScope scope = ScopeUtils.createScope(sourceDir);
+        String jars = cmd.getOptionValue("input");
+        AnalysisScope scope = ScopeUtils.createScope(jars);
 
         // Make class Heirarchy
 
-        Log.toConsole("Make class hierarchy.");
+        Log.info("Make class hierarchy.");
         try {
-            IClassHierarchy cha = ClassHierarchyFactory.make(scope,
-                    new ECJClassLoaderFactory(scope.getExclusions()) {
-                        @Override
-                        protected JavaSourceLoaderImpl makeSourceLoader(ClassLoaderReference classLoaderReference,
-                                IClassHierarchy cha, IClassLoader parent) {
-                            // TODO: Why do these lines fix issue #1
-                            return new CustomECJSourceLoaderImpl(classLoaderReference, parent, cha,
-                                    ScopeUtils.getStdLibs());
-                        }
-                    });
-            Log.toConsole("Done class hierarchy: " + cha.getNumberOfClasses() + " classes");
+            IClassHierarchy cha = ClassHierarchyFactory.make(scope);
+            Log.info("Done class hierarchy: " + cha.getNumberOfClasses() + " classes");
         } catch (ClassHierarchyException che) {
             che.printStackTrace();
             System.exit(-1);
@@ -116,5 +103,4 @@ public class Main {
 
         System.exit(0);
     }
-
 }
