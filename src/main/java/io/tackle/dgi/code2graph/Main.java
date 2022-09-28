@@ -94,7 +94,7 @@ public class Main {
 
         Log.info("Make class hierarchy.");
         try {
-            IClassHierarchy cha = ClassHierarchyFactory.make(scope);
+            IClassHierarchy cha = ClassHierarchyFactory.make(scope, new ECJClassLoaderFactory(scope.getExclusions()));
             Log.info("Done class hierarchy: " + cha.getNumberOfClasses() + " classes");
         } catch (ClassHierarchyException che) {
             che.printStackTrace();
