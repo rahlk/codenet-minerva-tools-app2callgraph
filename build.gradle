@@ -59,9 +59,10 @@ dependencies {
     implementation "org.eclipse.platform:org.eclipse.osgi:3.16.300"
     implementation "org.eclipse.platform:org.eclipse.text:3.11.0"
 
-    implementation "net.bytebuddy:byte-buddy:1.10.21"
 
-    testImplementation group: 'junit', name: 'junit', version: '4.+'
+    implementation 'org.jgrapht:jgrapht-core:1.5.1'
+
+    testImplementation group: 'junit', name: 'junit', version: '4.13.2'
 }
 
 task fatjar(type: Jar) {
@@ -97,4 +98,11 @@ task code2graph(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     mainClass = mainClassName
     args cmdargs.split()
+}
+task daytrader(type: JavaExec) {
+    group = "Execution"
+    description = "WALA code to system dependency graph"
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = mainClassName
+    args "-i etc/demo/daytrader-ee7-ejb.jar -o .".split()
 }
