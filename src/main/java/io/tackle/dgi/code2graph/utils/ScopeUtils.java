@@ -56,6 +56,7 @@ public class ScopeUtils {
       + "java\\/math\\/.*\n"
       + "java\\/applet\\/.*\n"
       + "java\\/rmi\\/.*\n"
+      + "org\\/apache\\/.*\n"
       + "";
 
   /**

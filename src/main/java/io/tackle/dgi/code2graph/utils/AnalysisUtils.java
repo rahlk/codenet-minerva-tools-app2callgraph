@@ -22,8 +22,12 @@ import com.ibm.wala.ipa.cha.IClassHierarchy;
 import com.ibm.wala.types.ClassLoaderReference;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 public class AnalysisUtils {
+
+  public static Map<String, Map<String, Object>> classAttr = new HashMap<String, Map<String, Object>>();
 
   /**
    * Verfy if a class is an application class.
@@ -65,5 +69,30 @@ public class AnalysisUtils {
     }
     Log.info("Registered " + entrypointsCount + " entrypoints.");
     return entrypoints;
+  }
+
+  public static void expandSymbolTable(IClassHierarchy cha) {
+    for (IClass c : cha) {
+      if (isApplicationClass(c)) {
+        // private constructor
+        String className = c.getName().getClassName().toString();
+        Map<String, Object> classAttributeMap = new HashMap<String, Object>();
+        String classIsPrivate = Boolean.toString(c.isPrivate());
+        classAttributeMap.put("isPrivate", classIsPrivate);
+        String classSourcePath = c.getSourceFileName();
+        classAttributeMap.put("source_file_name", classSourcePath);
+        Integer num_fields = c.getAllFields().size();
+        classAttributeMap.put("num_fields", num_fields);
+        Integer num_static_fields = c.getAllStaticFields().size();
+        classAttributeMap.put("num_static_fields", num_static_fields);
+        Integer num_static_methods = 0;
+        for (IMethod method : c.getDeclaredMethods()) {
+          num_static_methods += method.isStatic() ? 1 : 0;
+        }
+        classAttributeMap.put("num_static_methods", num_static_methods);
+        classAttributeMap.put("num_declared_methods", c.getDeclaredMethods().size());
+        classAttr.put(className, classAttributeMap);
+      }
+    }
   }
 }

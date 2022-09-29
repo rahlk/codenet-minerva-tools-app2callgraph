@@ -136,6 +136,11 @@ fabric.properties
 *.tar.gz
 *.rar
 
+# Don't ignore the demo binaries
+!etc/demo/jar/*.jar
+!etc/demo/ear/*.ear
+!etc/demo/war/*.war
+
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 replay_pid*
@@ -193,4 +198,3 @@ gradle-app.setting
 *.hprof
 
 # End of https://www.toptal.com/developers/gitignore/api/intellij,gradle,java,visualstudiocode
-
