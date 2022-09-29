@@ -13,7 +13,9 @@
 Native WALA implementation of code2graph for [konveyor/data-gravity-insights](https://github.com/konveyor/tackle-data-gravity-insights)
 
 ## Prequisits 
+
 - Java 11
+- Optionally, graphviz (for visualization)
 
 ## Usage
 
@@ -26,3 +28,22 @@ Convert java binary (*.jar, *.ear, *.war) to a neo4j graph.
  -o,--output <arg>   Destination to save the output graph (as graphml/dot/json).
  -q,--quiet          Don't print logs to console.
 ```
+
+### Examples
+
+There are some sample binaries in `etc/demo`. Some additional example usages include:
+
+1. Process multiple JAR files
+   ```
+   ./code2graph --input=etc/demo/jar/daytrader-ee7-ejb.jar:etc/demo/jar/daytrader-ee7-web.jar --output=etc/demo/output/daytrader-callgraph.dot
+   ```
+
+2. Process EAR file(s)
+   ```
+   ./code2graph --input=etc/demo/ear/daytrader-ee7.ear --output=etc/demo/output/daytrader-callgraph.dot
+   ```
+
+3. Process WAR file(s)
+   ```
+   ./code2graph --input=etc/demo/war/daytrader-ee7-web.war --output=etc/demo/output/daytrader-callgraph.dot
+   ```
