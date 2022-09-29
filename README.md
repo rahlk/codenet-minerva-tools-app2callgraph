@@ -13,7 +13,7 @@
 Native WALA implementation of code2graph for [konveyor/data-gravity-insights](https://github.com/konveyor/tackle-data-gravity-insights)
 
 ## Prequisits 
-- Java 8 (or above)
+- Java 11
 
 ## Usage
 
@@ -22,7 +22,7 @@ Native WALA implementation of code2graph for [konveyor/data-gravity-insights](ht
 Convert java binary (*.jar, *.ear, *.war) to a neo4j graph.
 
  -h,--help           Print this help message.
- -i,--input <arg>    Path to the input jar.
+ -i,--input <arg>    Path to the input jar(s). For multiple JARs, separate them with ':'. E.g., file1.jar:file2.jar, etc. 
  -o,--output <arg>   Destination to save the output graph (as graphml/dot/json).
  -q,--quiet          Don't print logs to console.
 ```
