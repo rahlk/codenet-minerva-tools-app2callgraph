@@ -51,7 +51,8 @@ public class Main {
   public static void main(String... args) {
     // Set Log Level
     Options options = new Options();
-    options.addOption("i", "input", true, "Path to the input jar.");
+    options.addOption("i", "input", true,
+        "Path to the input jar(s). For multiple JARs, separate them with ':'. E.g., file1.jar:file2.jar, etc.");
     options.addOption("o", "output", true, "Destination to save the output graph (as graphml/dot/json).");
     options.addOption("q", "quiet", false, "Don't print logs to console.");
     options.addOption("h", "help", false, "Print this help message.");
@@ -147,6 +148,7 @@ public class Main {
       iae.printStackTrace();
       System.exit(-1);
     }
+    Log.done("Callgraph saved at: " + cmd.getOptionValue("output"));
     System.exit(0);
   }
 }
