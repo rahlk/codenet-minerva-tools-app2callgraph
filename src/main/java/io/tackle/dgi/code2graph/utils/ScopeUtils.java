@@ -1,3 +1,16 @@
+/*
+Copyright IBM Corporation 2022
+
+Licensed under the Apache Public License 2.0, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package io.tackle.dgi.code2graph.utils;
 
 import com.ibm.wala.cast.java.ipa.callgraph.JavaSourceAnalysisScope;
@@ -20,31 +33,30 @@ import java.util.jar.JarFile;
 public class ScopeUtils {
 
   public static String[] stdLibs;
-  private static final String EXCLUSIONS =
-      "java\\/awt\\/.*\n"
-          + "javax\\/awt\\/.*\n"
-          + "javax\\/swing\\/.*\n"
-          + "sun\\/.*\n"
-          + /* "com\\/.*\n" + */ "jdk\\/.*\n"
-          + "oracle\\/.*\n"
-          + "apple\\/.*\n"
-          + "netscape\\/.*\n"
-          + "javafx\\/.*\n"
-          + "org\\/w3c\\/.*\n"
-          + "org\\/xml\\/.*\n"
-          + "org\\/jcp\\/.*\n"
-          + "org\\/ietf\\/.*\n"
-          + "org\\/omg\\/.*\n"
-          + "java\\/security\\/.*\n"
-          + "java\\/beans\\/.*\n"
-          + "java\\/time\\/.*\n"
-          + "java\\/text\\/.*\n"
-          + "java\\/net\\/.*\n"
-          + "java\\/nio\\/.*\n" /* + "java\\/io\\/.*\n" */
-          + "java\\/math\\/.*\n"
-          + "java\\/applet\\/.*\n"
-          + "java\\/rmi\\/.*\n"
-          + "";
+  private static final String EXCLUSIONS = "java\\/awt\\/.*\n"
+      + "javax\\/awt\\/.*\n"
+      + "javax\\/swing\\/.*\n"
+      + "sun\\/.*\n"
+      + /* "com\\/.*\n" + */ "jdk\\/.*\n"
+      + "oracle\\/.*\n"
+      + "apple\\/.*\n"
+      + "netscape\\/.*\n"
+      + "javafx\\/.*\n"
+      + "org\\/w3c\\/.*\n"
+      + "org\\/xml\\/.*\n"
+      + "org\\/jcp\\/.*\n"
+      + "org\\/ietf\\/.*\n"
+      + "org\\/omg\\/.*\n"
+      + "java\\/security\\/.*\n"
+      + "java\\/beans\\/.*\n"
+      + "java\\/time\\/.*\n"
+      + "java\\/text\\/.*\n"
+      + "java\\/net\\/.*\n"
+      + "java\\/nio\\/.*\n" /* + "java\\/io\\/.*\n" */
+      + "java\\/math\\/.*\n"
+      + "java\\/applet\\/.*\n"
+      + "java\\/rmi\\/.*\n"
+      + "";
 
   /**
    * Create an analysis scope base on the input

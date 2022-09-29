@@ -18,11 +18,11 @@ Native WALA implementation of code2graph for [konveyor/data-gravity-insights](ht
 ## Usage
 
 ```man
-./code2graph [-h] [-q] [-s <arg>]
-Convert source code (project folder) or binary (*.jar, *.ear, *.war) to a
-neo4j graph.
+./code2graph [-h] [-i <arg>] [-o <arg>] [-q]
+Convert java binary (*.jar, *.ear, *.war) to a neo4j graph.
 
- -h,--help               Print this help message.
- -q,--quiet              Don't print logs to console.
- -s,--source-dir <arg>   Path to the source directory root.
+ -h,--help           Print this help message.
+ -i,--input <arg>    Path to the input jar.
+ -o,--output <arg>   Destination to save the output graph (as graphml/dot/json).
+ -q,--quiet          Don't print logs to console.
 ```
