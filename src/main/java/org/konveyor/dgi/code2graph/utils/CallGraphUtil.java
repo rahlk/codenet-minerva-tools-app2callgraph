@@ -11,16 +11,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package io.tackle.dgi.code2graph.utils;
+package org.konveyor.dgi.code2graph.utils;
 
 import com.ibm.wala.classLoader.CallSiteReference;
 import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.ipa.callgraph.CGNode;
 import com.ibm.wala.ipa.callgraph.CallGraph;
-import com.ibm.wala.util.strings.Atom;
+import com.ibm.wala.core.util.strings.Atom;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Iterator;
@@ -30,7 +29,6 @@ import org.json.JSONObject;
 
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
-import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.nio.DefaultAttribute;
 import org.jgrapht.nio.Attribute;
 import org.jgrapht.nio.dot.DOTExporter;
@@ -38,6 +36,7 @@ import org.jgrapht.nio.json.JSONExporter;
 import org.jgrapht.nio.graphml.GraphMLExporter;
 
 public class CallGraphUtil {
+
     static class ClassNode implements Serializable {
         public final String className;
         public final String classShortName;
@@ -60,7 +59,7 @@ public class CallGraphUtil {
 
         @Override
         public boolean equals(Object o) {
-            return (o instanceof CallGraphEdge) && (toString().equals(o.toString()));
+            return (o instanceof ClassNode) && (toString().equals(o.toString()));
         }
     }
 
@@ -122,7 +121,7 @@ public class CallGraphUtil {
         return graph;
     }
 
-    public static void callgraph2GraphML(CallGraph callGraph, String savePath) {
+    public static void convert2GraphML(CallGraph callGraph, String outPath, String outFile) {
         Graph<ClassNode, CallGraphEdge> graph = getDefaultDirectedGraph(callGraph);
         GraphMLExporter<ClassNode, CallGraphEdge> exporter = new GraphMLExporter<>(v -> v.className);
         exporter.setVertexAttributeProvider((v) -> {
@@ -131,10 +130,10 @@ public class CallGraphUtil {
             return map;
         });
         // Export the graph to GraphML
-        exporter.exportGraph(graph, new File(savePath));
+        exporter.exportGraph(graph, new File(outPath, outFile));
     }
 
-    public static void callgraph2JSON(CallGraph callGraph, String savePath) {
+    public static void convert2JSON(CallGraph callGraph, String outPath, String outFile) {
         Graph<ClassNode, CallGraphEdge> graph = getDefaultDirectedGraph(callGraph);
         JSONExporter<ClassNode, CallGraphEdge> exporter = new JSONExporter<>(v -> v.className);
         exporter.setVertexAttributeProvider((v) -> {
@@ -143,10 +142,10 @@ public class CallGraphUtil {
             return map;
         });
         // Export the graph to JSON
-        exporter.exportGraph(graph, new File(savePath));
+        exporter.exportGraph(graph, new File(outPath, outFile));
     }
 
-    public static void callgraph2DOT(CallGraph callGraph, String savePath) {
+    public static void convert2DOT(CallGraph callGraph, String outPath, String outFile) {
         Graph<ClassNode, CallGraphEdge> graph = getDefaultDirectedGraph(callGraph);
         DOTExporter<ClassNode, CallGraphEdge> exporter = new DOTExporter<>(v -> v.classShortName);
         exporter.setVertexAttributeProvider((v) -> {
@@ -155,6 +154,6 @@ public class CallGraphUtil {
             return map;
         });
         // Export the graph to DOT
-        exporter.exportGraph(graph, new File(savePath));
+        exporter.exportGraph(graph, new File(outPath, outFile));
     }
 }
