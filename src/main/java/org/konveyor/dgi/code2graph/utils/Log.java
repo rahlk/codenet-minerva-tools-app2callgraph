@@ -56,8 +56,8 @@ public class Log {
   }
 
   /** @param msg */
-  public static final void dedug(String msg) {
-    toConsole(msg, ANSI_PURPLE, "DEBUG");
+  public static final void debug(String msg) {
+    toConsole(msg, ANSI_YELLOW, "DEBUG");
   }
 
   /** @param msg */

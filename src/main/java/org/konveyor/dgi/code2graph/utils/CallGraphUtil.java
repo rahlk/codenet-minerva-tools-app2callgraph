@@ -15,82 +15,27 @@ package org.konveyor.dgi.code2graph.utils;
 
 import com.ibm.wala.classLoader.CallSiteReference;
 import com.ibm.wala.classLoader.IMethod;
+import com.ibm.wala.core.util.strings.Atom;
 import com.ibm.wala.ipa.callgraph.CGNode;
 import com.ibm.wala.ipa.callgraph.CallGraph;
-import com.ibm.wala.core.util.strings.Atom;
+import org.jgrapht.Graph;
+import org.jgrapht.graph.DefaultDirectedGraph;
+import org.jgrapht.nio.Attribute;
+import org.jgrapht.nio.DefaultAttribute;
+import org.jgrapht.nio.dot.DOTExporter;
+import org.jgrapht.nio.graphml.GraphMLExporter;
+import org.jgrapht.nio.json.JSONExporter;
+import org.json.JSONObject;
+import org.konveyor.dgi.code2graph.utils.graph.ClassNode;
+import org.konveyor.dgi.code2graph.utils.graph.CallGraphEdge;
 
 import java.io.File;
 import java.io.Serializable;
-import java.util.Map;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-
-import org.json.JSONObject;
-
-import org.jgrapht.Graph;
-import org.jgrapht.graph.DefaultDirectedGraph;
-import org.jgrapht.nio.DefaultAttribute;
-import org.jgrapht.nio.Attribute;
-import org.jgrapht.nio.dot.DOTExporter;
-import org.jgrapht.nio.json.JSONExporter;
-import org.jgrapht.nio.graphml.GraphMLExporter;
+import java.util.Map;
 
 public class CallGraphUtil {
-
-    static class ClassNode implements Serializable {
-        public final String className;
-        public final String classShortName;
-
-        public ClassNode(String name) {
-            this.className = name.substring(1).replace("/", ".");
-            String classShortName = this.className.substring(this.className.lastIndexOf('.') + 1);
-            this.classShortName = classShortName.replace("$", "_");
-        }
-
-        @Override
-        public String toString() {
-            return className;
-        }
-
-        @Override
-        public int hashCode() {
-            return toString().hashCode();
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            return (o instanceof ClassNode) && (toString().equals(o.toString()));
-        }
-    }
-
-    static class CallGraphEdge implements Serializable {
-        public final Atom from;
-        public final Atom to;
-        public static final long serialVersionUID = -8284030936836318929L;
-
-        public CallGraphEdge(Atom from, Atom to) {
-            this.from = from;
-            this.to = to;
-        }
-
-        @Override
-        public String toString() {
-            return new JSONObject()
-                    .put("from", this.from.toString())
-                    .put("to", this.to.toString())
-                    .toString();
-        }
-
-        @Override
-        public int hashCode() {
-            return toString().hashCode();
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            return (o instanceof CallGraphEdge) && (toString().equals(o.toString()));
-        }
-    }
 
     private static Graph<ClassNode, CallGraphEdge> getDefaultDirectedGraph(CallGraph callGraph) {
         Graph<ClassNode, CallGraphEdge> graph = new DefaultDirectedGraph<>(CallGraphEdge.class);
@@ -103,8 +48,7 @@ public class CallGraphUtil {
                 for (CGNode callTarget : callGraph.getPossibleTargets(entrypointNode, callSiteReference)) {
                     if (AnalysisUtils.isApplicationClass(callTarget.getMethod().getDeclaringClass())) {
                         ClassNode source = new ClassNode(entryMethod.getDeclaringClass().getName().toString());
-                        ClassNode target = new ClassNode(
-                                callTarget.getMethod().getDeclaringClass().getName().toString());
+                        ClassNode target = new ClassNode(callTarget.getMethod().getDeclaringClass().getName().toString());
                         if (source.equals(target)) {
                             continue;
                         }

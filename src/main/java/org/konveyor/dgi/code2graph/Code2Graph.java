@@ -58,7 +58,7 @@ public class Code2Graph {
    * <p>
    * usage: ./code2graph [-h|--help] [-q|--quite] [-i|--input <arg> input jar]
    * [-d|--outdir <arg>] [-o|--output]
-   * output jar]
+   * output jar]`
    */
   public static void main(String... args) {
     // Set Log Level
