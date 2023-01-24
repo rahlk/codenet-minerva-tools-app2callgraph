@@ -49,5 +49,5 @@ There are some sample binaries in `etc/demo`. Some additional example usages inc
 
 3. Process WAR file(s)
    ```
-   ./code2graph --input=etc/demo/ear/daytrader-ee7-web.war --outdir=etc/demo/output/ --outfile=daytrader.json
+   ./code2graph --input=etc/demo/war/daytrader-ee7-web.war --outdir=etc/demo/output/ --outfile=daytrader.json
    ```
