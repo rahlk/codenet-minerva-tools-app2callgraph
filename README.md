@@ -23,10 +23,14 @@ Native WALA implementation of code2graph for [konveyor/data-gravity-insights](ht
 ./code2graph [-h] [-i <arg>] [-o <arg>] [-q]
 Convert java binary (*.jar, *.ear, *.war) to a neo4j graph.
 
- -h,--help           Print this help message.
- -i,--input <arg>    Path to the input jar(s). For multiple JARs, separate them with ':'. E.g., file1.jar:file2.jar, etc. 
- -o,--output <arg>   Destination to save the output graph (as graphml/dot/json).
- -q,--quiet          Don't print logs to console.
+ -h,--help            Print this help message.
+ -d,--outdir <arg>    Destination (directory) to save the output graph.
+ -i,--input <arg>     Path to the input jar(s). For multiple JARs,
+                      separate them with ':'. E.g., file1.jar:file2.jar,
+                      etc.
+ -o,--outfile <arg>   Destination (filename) to save the output graph (as
+                      graphml/dot/json).
+ -q,--quiet           Don't print logs to console.
 ```
 
 ### Examples
