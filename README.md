@@ -35,15 +35,15 @@ There are some sample binaries in `etc/demo`. Some additional example usages inc
 
 1. Process multiple JAR files
    ```
-   ./code2graph --input=etc/demo/jar/daytrader-ee7-ejb.jar:etc/demo/jar/daytrader-ee7-web.jar --output=etc/demo/output/daytrader-callgraph.dot
+   ./code2graph --input=etc/demo/jar/daytrader-ee7-ejb.jar:etc/demo/jar/daytrader-ee7-web.jar --outdir=etc/demo/output/ --outfile=daytrader.json
    ```
 
 2. Process EAR file(s)
    ```
-   ./code2graph --input=etc/demo/ear/daytrader-ee7.ear --output=etc/demo/output/daytrader-callgraph.dot
+   ./code2graph --input=etc/demo/ear/daytrader-ee7.ear --outdir=etc/demo/output/ --outfile=daytrader.json
    ```
 
 3. Process WAR file(s)
    ```
-   ./code2graph --input=etc/demo/war/daytrader-ee7-web.war --output=etc/demo/output/daytrader-callgraph.dot
+   ./code2graph --input=etc/demo/ear/daytrader-ee7-web.war --outdir=etc/demo/output/ --outfile=daytrader.json
    ```
