@@ -2,8 +2,9 @@ package org.konveyor.dgi.code2graph.utils;
 
 import com.ibm.wala.ipa.callgraph.CallGraph;
 import com.ibm.wala.ipa.callgraph.propagation.InstanceKey;
-import com.ibm.wala.ipa.slicer.*;
-import com.ibm.wala.ssa.*;
+import com.ibm.wala.ipa.slicer.MethodEntryStatement;
+import com.ibm.wala.ipa.slicer.SDG;
+import com.ibm.wala.ipa.slicer.Statement;
 import com.ibm.wala.types.ClassLoaderReference;
 import com.ibm.wala.util.collections.HashMapFactory;
 import com.ibm.wala.util.graph.Graph;
@@ -13,81 +14,20 @@ import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.nio.Attribute;
 import org.jgrapht.nio.DefaultAttribute;
 import org.jgrapht.nio.json.JSONExporter;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import org.konveyor.dgi.code2graph.utils.graph.Edge;
+import org.konveyor.dgi.code2graph.utils.graph.Node;
 
-import java.io.*;
+import java.io.File;
 import java.util.*;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.function.Supplier;
-
-
-import org.konveyor.dgi.code2graph.utils.graph.CallGraphEdge;
-import org.konveyor.dgi.code2graph.utils.graph.ClassNode;
-import org.konveyor.dgi.code2graph.utils.graph.Node;
-import org.konveyor.dgi.code2graph.utils.graph.Edge;
 
 /**
  * The type Sdg 2 json.
  */
 public class SDG2JSON {
-
-    private static class JSONElementFactory {
-        static JSONObject makeNodeJSONObject(Map<String, String> nodeAttr) {
-            JSONObject newNode = new JSONObject();
-            nodeAttr.forEach(newNode::put);
-            return newNode;
-        }
-        static JSONObject makeEdgeJSONObject(Map<String, Object> edges) {
-            JSONObject edgeObject = new JSONObject();
-            edges.forEach((key, obj) -> {
-                if (obj instanceof ArrayList) {
-                    ArrayList<String> val = (ArrayList<String>) obj;
-                    edgeObject.put("between", new JSONArray(val));
-                } else if(obj instanceof String){
-                    edges.forEach(edgeObject::put);
-                }
-            });
-            return edgeObject;
-        }
-    }
-
-    private static String sdgFeatures(Statement n) {
-        if (n instanceof MethodEntryStatement) {
-            return "entry " + n.getNode().getMethod().getName();
-        } else if (n instanceof MethodExitStatement) {
-            return "exit " + n.getNode().getMethod().getName();
-        } else if (n instanceof PhiStatement ||
-                n instanceof ParamCaller ||
-                n instanceof ParamCallee ||
-                n instanceof NormalReturnCallee ||
-                n instanceof NormalReturnCaller) {
-            return "flow";
-        } else if (n instanceof NormalStatement) {
-            SSAInstruction inst = ((NormalStatement)n).getInstruction();
-            if (inst instanceof SSABinaryOpInstruction) {
-                return ((SSABinaryOpInstruction)inst).getOperator().toString();
-            } else if (inst instanceof SSAUnaryOpInstruction) {
-                return ((SSAUnaryOpInstruction)inst).getOpcode().toString();
-            } else if (inst instanceof SSAConditionalBranchInstruction) {
-                return ((SSAConditionalBranchInstruction)inst).getOperator().toString();
-            } else if (inst instanceof SSAAbstractInvokeInstruction) {
-                return ((SSAAbstractInvokeInstruction)inst).getDeclaredTarget().getName().toString();
-            } else if (inst instanceof SSANewInstruction) {
-                return ((SSANewInstruction)inst).getConcreteType().getName().toString();
-            } else {
-                return null;
-            }
-
-        } else {
-            return null;
-        }
-    }
-
     private static org.jgrapht.Graph<Node, Edge> build(Supplier<Iterator<Statement>> entryPoints,
                               Graph<Statement> sdg,
-                              Function<Statement, String> features,
                               BiFunction<Statement, Statement, String> edgeLabels) {
 
         org.jgrapht.Graph<Node, Edge> graph = new DefaultDirectedGraph<>(Edge.class);
@@ -100,7 +40,7 @@ public class SDG2JSON {
             dfsFinish.put(search.next(), dfsNumber++);
         }
 
-        // THis is a reverse DFS search (or entry time first search)
+        // This is a reverse DFS search (or entry time first search)
         int reverseDfsNumber = 0;
         Map<Statement,Integer> dfsStart = HashMapFactory.make();
         Iterator<Statement> reverseSearch = DFS.iterateDiscoverTime(sdg, entryPoints.get());
@@ -112,42 +52,38 @@ public class SDG2JSON {
         sdg.stream()
                 .filter(dfsFinish::containsKey)
                 .sorted(Comparator.comparingInt(dfsFinish::get))
-                .forEach(currentStatement -> {
-                    sdg.getSuccNodes(currentStatement).forEachRemaining(nextStatement -> {
-                        if (dfsFinish.containsKey(nextStatement) &&
-                                !((dfsStart.get(currentStatement) >= dfsStart.get(nextStatement)) &&
-                                        (dfsFinish.get(currentStatement) <= dfsFinish.get(nextStatement)) &&
-                                        !Objects.equals(currentStatement.getNode().getMethod().toString(), nextStatement.getNode().getMethod().toString()))) {
+                .forEach(currentStatement -> sdg.getSuccNodes(currentStatement).forEachRemaining(nextStatement -> {
+                    if (dfsFinish.containsKey(nextStatement) &&
+                            !((dfsStart.get(currentStatement) >= dfsStart.get(nextStatement)) &&
+                                    (dfsFinish.get(currentStatement) <= dfsFinish.get(nextStatement)) &&
+                                    !Objects.equals(currentStatement.getNode().getMethod().toString(), nextStatement.getNode().getMethod().toString()))) {
 
 
-                            Node sourceNode = new Node(dfsStart.get(currentStatement), currentStatement);
-                            Node destinationNode = new Node(dfsStart.get(nextStatement), nextStatement);
+                        Node sourceNode = new Node(dfsStart.get(currentStatement), currentStatement);
+                        Node destinationNode = new Node(dfsStart.get(nextStatement), nextStatement);
 
-                            graph.addVertex(sourceNode);
-                            graph.addVertex(destinationNode);
-                            graph.addEdge(
-                                    sourceNode,
-                                    destinationNode,
-                                    new Edge(dfsStart.get(currentStatement), dfsStart.get(nextStatement), edgeLabels.apply(currentStatement, nextStatement)));
-                        }
-                    });
-                });
+                        graph.addVertex(sourceNode);
+                        graph.addVertex(destinationNode);
+                        graph.addEdge(
+                                sourceNode,
+                                destinationNode,
+                                new Edge(dfsStart.get(currentStatement), dfsStart.get(nextStatement), edgeLabels.apply(currentStatement, nextStatement)));
+                    }
+                }));
         return graph;
     }
     public static void convert2JSON(SDG<? extends InstanceKey> sdg, File output) {
         // Prune the Graph to keep only application classes.
         Log.info("Pruning SDG to keep only Application classes.");
         Graph<Statement> prunedGraph = GraphSlicer.prune(sdg,
-                statement -> {
-                    return (
-                            statement.getNode()
-                                    .getMethod()
-                                    .getDeclaringClass()
-                                    .getClassLoader()
-                                    .getReference()
-                                    .equals(ClassLoaderReference.Application)
-                    );
-                }
+                statement -> (
+                        statement.getNode()
+                                .getMethod()
+                                .getDeclaringClass()
+                                .getClassLoader()
+                                .getReference()
+                                .equals(ClassLoaderReference.Application)
+                )
         );
         Log.done("SDG built and pruned. It has " + prunedGraph.getNumberOfNodes() + " nodes.");
 
@@ -160,7 +96,6 @@ public class SDG2JSON {
 
         org.jgrapht.Graph<Node, Edge> graph = build(entryPointsSupplier,
                                             prunedGraph,
-                                            SDG2JSON::sdgFeatures,
                                             (p, s) -> String.valueOf(sdg.getEdgeLabels(p, s).iterator().next()));
 
 
