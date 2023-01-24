@@ -25,4 +25,5 @@ while [ "$1" != "" ]; do
     shift
 done
 
+
 eval "./gradlew --quiet clean code2graph -Pargs=\"$ARGS\""

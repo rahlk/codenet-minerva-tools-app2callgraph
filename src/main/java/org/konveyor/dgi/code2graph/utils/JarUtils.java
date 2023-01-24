@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package io.tackle.dgi.code2graph.utils;
+package org.konveyor.dgi.code2graph.utils;
 
 import java.io.File;
 import java.io.IOException;

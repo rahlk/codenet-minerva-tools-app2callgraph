@@ -11,12 +11,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package io.tackle.dgi.code2graph.utils;
+package org.konveyor.dgi.code2graph.utils;
 
 import java.time.LocalDateTime;
 
 public class Log {
-
+  public static final String ANSI_RESET = "\u001B[0m";
+  public static final String ANSI_BLACK = "\u001B[30m";
+  public static final String ANSI_RED = "\u001B[31m";
+  public static final String ANSI_GREEN = "\u001B[32m";
+  public static final String ANSI_YELLOW = "\u001B[33m";
+  public static final String ANSI_BLUE = "\u001B[34m";
+  public static final String ANSI_PURPLE = "\u001B[35m";
+  public static final String ANSI_CYAN = "\u001B[36m";
+  public static final String ANSI_WHITE = "\u001B[37m";
   private static boolean verbose = true;
 
   /**
@@ -39,22 +47,22 @@ public class Log {
 
   /** @param msg */
   public static final void info(String msg) {
-    toConsole(msg, "INFO");
+    toConsole(msg, ANSI_PURPLE, "INFO");
   }
 
   /** @param msg */
   public static final void done(String msg) {
-    toConsole(msg, "DONE");
+    toConsole(msg, ANSI_GREEN, "DONE");
   }
 
   /** @param msg */
-  public static final void dedug(String msg) {
-    toConsole(msg, "DEBUG");
+  public static final void debug(String msg) {
+    toConsole(msg, ANSI_YELLOW, "DEBUG");
   }
 
   /** @param msg */
   public static final void error(String msg) {
-    toConsole(msg, "ERROR");
+    toConsole(msg, ANSI_RED, "ERROR");
   }
 
   /**
@@ -62,10 +70,10 @@ public class Log {
    *
    * @param msg to print to console
    */
-  private static void toConsole(String msg, String Level) {
+  private static void toConsole(String msg, String ansi_color, String Level) {
     if (isVerbose() == true) {
       LocalDateTime localDateTime = LocalDateTime.now();
-      System.out.println(localDateTime.toString() + "\t[" + Level + "]\t" + msg);
+      System.out.println(ANSI_CYAN + localDateTime.toString() + ANSI_RESET + ansi_color + "\t[" + Level + "]\t" + ANSI_RESET + msg);
     }
   }
 }
