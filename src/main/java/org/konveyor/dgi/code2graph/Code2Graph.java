@@ -65,8 +65,8 @@ public class Code2Graph {
     Options options = new Options();
     options.addOption("i", "input", true,
         "Path to the input jar(s). For multiple JARs, separate them with ':'. E.g., file1.jar:file2.jar, etc.");
-    options.addOption("d", "outdir", true, "Destination (directory) to save the output graph.");
-    options.addOption("o", "outfile", true, "Destination (filename) to save the output graph (as graphml/dot/json).");
+    options.addOption("o", "output", true, "Destination (directory) to save the output graphs.");
+    options.addOption("f", "format", true, "Output graph format as graphml/dot/json.");
     options.addOption("q", "quiet", false, "Don't print logs to console.");
     options.addOption("h", "help", false, "Print this help message.");
     CommandLineParser parser = new DefaultParser();
@@ -89,11 +89,10 @@ public class Code2Graph {
         throw new RuntimeException(
             "[Runtime Exception] Need to provide an input JAR to process.\n\n");
       }
-      if (!cmd.hasOption("outdir")) {
+      if (!cmd.hasOption("output")) {
         throw new RuntimeException(
-            "[Runtime Exception] Need to provide an output path to save the generated files.\n\n");
-      }
-      else {
+            "[Runtime Exception] Need to provide an output directory to save the generated files.\n\n");
+      } else {
         outDir = String.valueOf(options.getOption("outdir"));
       }
     } catch (Exception e) {
@@ -142,51 +141,55 @@ public class Code2Graph {
       CallGraph callGraph = builder.makeCallGraph(options, null);
       long end_time = System.currentTimeMillis();
       Log.done(
-              "Finished construction of call graph. Took "
-                      + Long.toString(end_time - start_time)
-                      + " milliseconds."
-      );
+          "Finished construction of call graph. Took "
+              + Long.toString(end_time - start_time)
+              + " milliseconds.");
 
       // Save call graph
       Log.info("Saving callgraph.");
-      outDir = cmd.getOptionValue("outdir");
-      outFile = cmd.getOptionValue("outfile");
-      String extenstion = FilenameUtils.getExtension(outFile);
-      switch (extenstion) {
-        case "graphml":
-          CallGraphUtil.convert2GraphML(callGraph, outDir, "call_graph_"+outFile);
-          break;
-        case "json":
-          CallGraphUtil.convert2JSON(callGraph, outDir, "call_graph_"+outFile);
-          break;
-        case "dot":
-          CallGraphUtil.convert2DOT(callGraph, outDir, "call_graph_"+outFile);
-          break;
-        default:
-          Log.error("Output file not provided or the extension type is unknown.");
-          System.exit(1);
+      outDir = cmd.getOptionValue("output");
+      String extenstion = cmd.getOptionValue("extension");
+      if (extenstion == null) {
+        Log.warn("No extenstion provided, saving graph as JSON.");
+        CallGraphUtil.convert2JSON(callGraph, outDir, "call_graph.json");
+      } else {
+        switch (extenstion) {
+          case "graphml":
+            Log.info("Saving graph as graphml.");
+            CallGraphUtil.convert2GraphML(callGraph, outDir, "call_graph.graphml");
+            break;
+          case "json":
+            Log.info("Saving graph as JSON.");
+            CallGraphUtil.convert2JSON(callGraph, outDir, "call_graph.json");
+            break;
+          case "dot":
+            Log.info("Saving graph as dot.");
+            CallGraphUtil.convert2DOT(callGraph, outDir, "call_graph.dot");
+            break;
+          default:
+            Log.error("Unknown extenstion " + extenstion);
+            System.exit(1);
+        }
       }
-      Log.done("Callgraph saved at: " + outDir + "call_graph_"+outFile);
 
       /*--------------------------------------------------------------------------------------------------------------*/
       // Build SDG graph
       Log.info("Building System Dependency Graph.");
       start_time = System.currentTimeMillis();
       SDG<? extends InstanceKey> sdg = new SDG<>(
-              callGraph,
-              ((PropagationCallGraphBuilder) builder).getPointerAnalysis(),
-              new AstJavaModRef<>(),
-              Slicer.DataDependenceOptions.NO_HEAP_NO_EXCEPTIONS,
-              Slicer.ControlDependenceOptions.NO_EXCEPTIONAL_EDGES);
-
+          callGraph,
+          ((PropagationCallGraphBuilder) builder).getPointerAnalysis(),
+          new AstJavaModRef<>(),
+          Slicer.DataDependenceOptions.NO_HEAP_NO_EXCEPTIONS,
+          Slicer.ControlDependenceOptions.NO_EXCEPTIONAL_EDGES);
 
       Log.done("Built SDG.");
 
       // Save SDG as JSON
-      SDG2JSON.convert2JSON(sdg, new File(outDir, "sdg_"+outFile));
+      SDG2JSON.convert2JSON(sdg, new File(outDir, "sdg.json"));
       // Save SDG features
       Log.info("Saving the system dependency graph");
-      Log.done("SDG saved at " + outDir + ".");
+      Log.done("SDG saved at " + outDir + "sdg.json");
     } catch (ClassHierarchyException che) {
       che.printStackTrace();
       System.exit(-1);

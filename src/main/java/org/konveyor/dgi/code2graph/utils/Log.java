@@ -57,7 +57,12 @@ public class Log {
 
   /** @param msg */
   public static final void debug(String msg) {
-    toConsole(msg, ANSI_YELLOW, "DEBUG");
+    toConsole(msg, ANSI_BLUE, "DEBUG");
+  }
+
+  /** @param msg */
+  public static final void warn(String msg) {
+    toConsole(msg, ANSI_YELLOW, "WARN");
   }
 
   /** @param msg */
@@ -73,7 +78,8 @@ public class Log {
   private static void toConsole(String msg, String ansi_color, String Level) {
     if (isVerbose() == true) {
       LocalDateTime localDateTime = LocalDateTime.now();
-      System.out.println(ANSI_CYAN + localDateTime.toString() + ANSI_RESET + ansi_color + "\t[" + Level + "]\t" + ANSI_RESET + msg);
+      System.out.println(
+          ANSI_CYAN + localDateTime.toString() + ANSI_RESET + ansi_color + "\t[" + Level + "]\t" + ANSI_RESET + msg);
     }
   }
 }
