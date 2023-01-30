@@ -67,11 +67,13 @@ task fatjar(type: Jar) {
     archiveBaseName = 'code2graph'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     manifest {
-        attributes  'Implementation-Title': 'Tackle DGI WALA Code2graph',
+        attributes  'Implementation-Title': 'Konveyor Code2graph',
                     'Implementation-Version': archiveVersion,
-                    'Main-Class': 'org.konveyor.dgi.code2graph.Main'
+                    'Main-Class': 'org.konveyor.dgi.code2graph.Code2Graph'
     }
-    from { configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+    from { configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) } } {
+            exclude 'META-INF/*.RSA', 'META-INF/*.SF', 'META-INF/*.DSA'
+    }
     with jar
 }
 
