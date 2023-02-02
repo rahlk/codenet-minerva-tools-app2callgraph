@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package org.konveyor.dgi.code2graph.utils;
+package com.ibm.minerva.app2callgraph.utils;
 
 import com.ibm.wala.cast.java.ipa.callgraph.JavaSourceAnalysisScope;
 import com.ibm.wala.classLoader.BinaryDirectoryTreeModule;
