@@ -13,7 +13,7 @@ if (project.hasProperty('mainClass')) {
     mainClassName = project.getProperty('mainClass')
 } else {
     // use a default
-    mainClassName = "org.konveyor.dgi.code2graph.Code2Graph"
+    mainClassName = "com.ibm.minerva.app2callgraph.App2CallGraph"
 }
 
 // Remove that nagging bin folder vscode seems to generate every single time
@@ -69,7 +69,7 @@ task fatjar(type: Jar) {
     manifest {
         attributes  'Implementation-Title': 'Konveyor Code2graph',
                     'Implementation-Version': archiveVersion,
-                    'Main-Class': 'org.konveyor.dgi.code2graph.Code2Graph'
+                    'Main-Class': 'com.ibm.minerva.app2callgraph.App2CallGraph'
     }
     from { configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) } } {
             exclude 'META-INF/*.RSA', 'META-INF/*.SF', 'META-INF/*.DSA'
@@ -92,7 +92,7 @@ if (project.hasProperty("args")) {
 } else { 
     ext.cmdargs = ""
 }
-task code2graph(type: JavaExec) {
+task app2callgraph(type: JavaExec) {
     group = "Execution"
     description = "WALA code to system dependency graph"
     classpath = sourceSets.main.runtimeClasspath
