@@ -9,7 +9,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-#!/usr/bin/env sh
+#!/bin/sh
 
 ARGS=""
 while [ "$1" != "" ]; do
@@ -25,4 +25,9 @@ while [ "$1" != "" ]; do
     shift
 done
 
-eval "./gradlew --quiet clean app2callgraph -Pargs=\"$ARGS\""
+if ! command -v gradle >/dev/null; then
+    # install foobar here
+    eval "./gradlew --quiet clean app2callgraph -Pargs=\"$ARGS\""
+else
+    eval "gradle --quiet clean app2callgraph -Pargs=\"$ARGS\""
+fi

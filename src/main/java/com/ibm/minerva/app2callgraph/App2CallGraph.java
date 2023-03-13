@@ -14,6 +14,8 @@ limitations under the License.
 package com.ibm.minerva.app2callgraph;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -77,6 +79,10 @@ public class App2CallGraph {
     options.addOption("o", "output", true, "Destination (directory) to save the output graphs.");
     options.addOption("q", "quiet", false, "Don't print logs to console.");
     options.addOption("h", "help", false, "Print this help message.");
+    // Experimental options for the finding the root cause of issue #7
+    options.addOption("m", "context-mode", false, "Select context mode (0-CFA, 0-1-CFA, etc.).");
+    options.addOption("e", "experimental", false,
+        "Experimental mode to save the CHA classes for comparison and verification.");
     CommandLineParser parser = new DefaultParser();
 
     CommandLine cmd = null;
@@ -89,6 +95,9 @@ public class App2CallGraph {
       if (cmd.hasOption("help")) {
         hf.printHelp("./app2callgraph", header, options, null, true);
         System.exit(0);
+      }
+      if (cmd.hasOption("experimental")) {
+        Log.warn("Using experimental mode. There will be dump of *.txt files.");
       }
       if (cmd.hasOption("quiet")) {
         Log.setVerbosity(false);
@@ -133,7 +142,19 @@ public class App2CallGraph {
       // Create class hierarchy
       IClassHierarchy cha = ClassHierarchyFactory.make(scope, new ECJClassLoaderFactory(scope.getExclusions()));
       Log.done("Done class hierarchy: " + cha.getNumberOfClasses() + " classes");
-
+      if (cmd.hasOption("experimental")) {
+        try (FileWriter writer = new FileWriter("classes_in_class_heirarchy.txt")) {
+          for (IClass c : cha) {
+            if (AnalysisUtils.isApplicationClass(c))
+              writer.write(c.getName() + "\n");
+          }
+        } catch (FileNotFoundException e) {
+          throw e;
+        } catch (IOException e) {
+          Log.error("Something went wrong");
+        }
+        System.exit(0);
+      }
       // Initialize analysis options
       AnalysisOptions options = new AnalysisOptions();
       Iterable<Entrypoint> entryPoints = AnalysisUtils.getEntryPoints(cha);

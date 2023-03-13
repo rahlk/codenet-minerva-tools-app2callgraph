@@ -29,10 +29,12 @@ public class AnalysisUtils {
   public static Map<String, Map<String, Object>> classAttr = new HashMap<String, Map<String, Object>>();
 
   /**
-   * Verfy if a class is an application class.
+   * Verify if a class is an application class.
    *
-   * @param _class
-   * @return Boolean
+   * @param _class : The given class that needs to be verified as an application
+   *               class.
+   * @return Boolean : Returns true if the input class is an application class;
+   *         false otherwise.
    */
   public static Boolean isApplicationClass(IClass _class) {
     if (_class.getClassLoader().getReference().equals(ClassLoaderReference.Application)) {
@@ -43,30 +45,34 @@ public class AnalysisUtils {
   }
 
   /**
-   * Use all public methods of all application classes as entrypoints.
+   * Use all public methods of all application classes as entry points.
    *
-   * @param cha
-   * @return Iterable<Entrypoint>
+   * @param cha : The class hierarchy object that holds all the classes.
+   * @return Iterable<Entrypoint> : An iterable collection of entry points (public
+   *         methods of all application classes).
    */
   public static Iterable<Entrypoint> getEntryPoints(IClassHierarchy cha) {
     Collection<Entrypoint> entrypoints = new ArrayList<>();
     int entrypointsCount = 0;
+    // Iterates over all classes of the hierarchy and adds all public methods of
+    // application classes as entrypoints.
     for (IClass c : cha) {
-      if (isApplicationClass(c)) {
+      if (isApplicationClass(c)) { // Checks whether the class is an application class.
         try {
-          for (IMethod method : c.getDeclaredMethods()) {
-            if (method.isPublic()) {
-              entrypointsCount += 1;
-              entrypoints.add(new DefaultEntrypoint(method, cha));
+          for (IMethod method : c.getDeclaredMethods()) { // Loop through all methods available in the given class.
+            if (method.isPublic()) { // Check if method is public.
+              entrypointsCount += 1; // Increment the count of entry points found.
+              entrypoints.add(new DefaultEntrypoint(method, cha)); // Add the public method to the entry point
+                                                                   // collection.
             }
           }
-        } catch (NullPointerException nullPointerException) {
+        } catch (NullPointerException nullPointerException) { // Handle any possible exception.
           Log.error(c.getSourceFileName());
           System.exit(1);
         }
       }
     }
-    Log.info("Registered " + entrypointsCount + " entrypoints.");
-    return entrypoints;
+    Log.info("Registered " + entrypointsCount + " entrypoints."); // Print the total number of entry points found.
+    return entrypoints; // Return the iterable entry points.
   }
 }
