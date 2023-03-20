@@ -1,4 +1,4 @@
-FROM ubuntu:22.04
+FROM gradle:6.7.0-jdk11
 
 ARG USERNAME=dev
 ARG USER_GROUP_NAME=workspace
@@ -8,8 +8,6 @@ ARG JAVA_VERSION=11.0.11.hs-adpt
 ARG GRADLE_VERSION=6.7
 
 ARG PKG="sudo unzip zip vim make git tree curl wget jq"
-
-SHELL ["/bin/bash", "-c"]
 
 # Install packages and create the user with passwordless sudo privileges
 RUN apt-get update \
@@ -24,9 +22,3 @@ RUN apt-get update \
 
 # Enable color terminal for docker exec bash
 ENV TERM=xterm-256color
-
-RUN su ${USERNAME} --command \
-    'curl -s "https://get.sdkman.io" | bash \
-    && source "${HOME}/.sdkman/bin/sdkman-init.sh" \
-    && sdk install java "${JAVA_VERSION}" \
-    && sdk install gradle ${GRADLE_VERSION}'

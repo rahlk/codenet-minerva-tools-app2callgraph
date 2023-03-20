@@ -24,6 +24,8 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -33,31 +35,8 @@ import java.util.jar.JarFile;
 public class ScopeUtils {
 
   public static String[] stdLibs;
-  private static final String EXCLUSIONS = "java\\/awt\\/.*\n"
-      + "javax\\/awt\\/.*\n"
-      + "javax\\/swing\\/.*\n"
-      + "sun\\/.*\n"
-      + /* "com\\/.*\n" + */ "jdk\\/.*\n"
-      + "oracle\\/.*\n"
-      + "apple\\/.*\n"
-      + "netscape\\/.*\n"
-      + "javafx\\/.*\n"
-      + "org\\/w3c\\/.*\n"
-      + "org\\/xml\\/.*\n"
-      + "org\\/jcp\\/.*\n"
-      + "org\\/ietf\\/.*\n"
-      + "org\\/omg\\/.*\n"
-      + "java\\/security\\/.*\n"
-      + "java\\/beans\\/.*\n"
-      + "java\\/time\\/.*\n"
-      + "java\\/text\\/.*\n"
-      + "java\\/net\\/.*\n"
-      + "java\\/nio\\/.*\n" /* + "java\\/io\\/.*\n" */
-      + "java\\/math\\/.*\n"
-      + "java\\/applet\\/.*\n"
-      + "java\\/rmi\\/.*\n"
-      + "org\\/apache\\/.*\n"
-      + "";
+  // I am not including any exclusions for now.
+  private static final String EXCLUSIONS = "";
 
   /**
    * Create an analysis scope base on the input
@@ -65,17 +44,46 @@ public class ScopeUtils {
    * @param inputs Directories to consider for scope creation.
    * @return scope The created analysis scope
    * @throws IOException
+   * @throws URISyntaxException
    */
-  public static AnalysisScope createScope(String inputs) throws IOException {
+
+  public static AnalysisScope createScope(String inputs, String extraLibs) throws IOException, URISyntaxException {
     Log.info("Create analysis scope.");
     AnalysisScope scope = new JavaSourceAnalysisScope();
     scope = addDefaultExclusions(scope);
-    // add standard libraries to scope
+
+    Log.info("Loading Java SE standard libs.");
     String[] stdlibs = WalaProperties.getJ2SEJarFiles();
     for (String stdlib : stdlibs) {
       scope.addToScope(ClassLoaderReference.Primordial, new JarFile(stdlib));
     }
     setStdLibs(stdlibs);
+
+    // ---------------------
+    // Add JEE jars to scope
+    // ---------------------
+    Log.info("Loading JavaEE standard libs.");
+    URL url = ScopeUtils.class.getClassLoader().getResource("libs");
+    String jeeJarPath = url.getPath();
+    File[] jeeJarFiles = new File(jeeJarPath).listFiles();
+    for (File jarFile : jeeJarFiles) {
+      Log.info("↪ Adding " + jarFile + " to scope.");
+      scope.addToScope(ClassLoaderReference.Primordial, new JarFile(jarFile.getAbsolutePath()));
+    }
+
+    // -------------------------------------
+    // Add extra user provided JARS to scope
+    // -------------------------------------
+    if (!(extraLibs == null)) {
+      Log.info("Loading user specified extra libs.");
+      File[] listOfExtraLibs = new File(extraLibs).listFiles();
+      for (File extraLibJar : listOfExtraLibs) {
+        Log.info("↪ Adding " + extraLibJar + " to scope.");
+        scope.addToScope(ClassLoaderReference.Primordial, new JarFile(extraLibJar.getAbsolutePath()));
+      }
+    } else {
+      Log.warn("No extra libraries to process.");
+    }
 
     String tmpDirString = System.getProperty("java.io.tmpdir");
     Path workDir = Paths.get(tmpDirString);

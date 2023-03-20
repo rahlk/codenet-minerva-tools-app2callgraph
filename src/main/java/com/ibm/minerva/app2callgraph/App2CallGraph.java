@@ -1,5 +1,5 @@
 /*
-Copyright IBM Corporation 2022
+Copyright IBM Corporation 2023
 
 Licensed under the Apache Public License 2.0, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,15 +17,18 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.StringJoiner;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
+
 // JGraptT to export call graph
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
@@ -39,6 +42,7 @@ import com.ibm.minerva.app2callgraph.utils.AnalysisUtils;
 import com.ibm.minerva.app2callgraph.utils.Log;
 import com.ibm.minerva.app2callgraph.utils.ScopeUtils;
 import com.ibm.wala.cast.ir.ssa.AstIRFactory;
+import com.ibm.wala.cast.java.client.impl.ZeroCFABuilderFactory;
 import com.ibm.wala.cast.java.client.impl.ZeroOneCFABuilderFactory;
 import com.ibm.wala.cast.java.translator.jdt.ecj.ECJClassLoaderFactory;
 import com.ibm.wala.classLoader.CallSiteReference;
@@ -58,11 +62,13 @@ import com.ibm.wala.ipa.cha.ClassHierarchyException;
 import com.ibm.wala.ipa.cha.ClassHierarchyFactory;
 import com.ibm.wala.ipa.cha.IClassHierarchy;
 import com.ibm.wala.ssa.SymbolTable;
+import com.ibm.wala.ipa.callgraph.impl.Util;
 
 public class App2CallGraph {
 
   private static String input;
   private static String outDir;
+  private static String extraLibs = null;
 
   /**
    * Convert java binary (*.jar, *.ear, *.war) to a neo4j graph.
@@ -76,12 +82,14 @@ public class App2CallGraph {
     Options options = new Options();
     options.addOption("i", "input", true,
         "Path to the input jar(s). For multiple JARs, separate them with ':'. E.g., file1.jar:file2.jar, etc.");
+    options.addOption("e", "extra-libs", true,
+        "Path to the extra libraries to consider when processing jar(s). This arg will the the path the to directory.");
     options.addOption("o", "output", true, "Destination (directory) to save the output graphs.");
     options.addOption("q", "quiet", false, "Don't print logs to console.");
     options.addOption("h", "help", false, "Print this help message.");
     // Experimental options for the finding the root cause of issue #7
-    options.addOption("m", "context-mode", false, "Select context mode (0-CFA, 0-1-CFA, etc.).");
-    options.addOption("e", "experimental", false,
+    options.addOption("m", "context-mode", true, "Select context mode (RTA, Zero, Zero-One.).");
+    options.addOption("x", "experimental", false,
         "Experimental mode to save the CHA classes for comparison and verification.");
     CommandLineParser parser = new DefaultParser();
 
@@ -128,14 +136,17 @@ public class App2CallGraph {
 
   /**
    * @param cmd
+   * @throws URISyntaxException
    * @throws Exception
    */
   private static void buildAndSaveCallGraph(CommandLine cmd)
       throws ClassHierarchyException, IllegalArgumentException, NullPointerException, IOException,
-      CallGraphBuilderCancelException {
+      CallGraphBuilderCancelException, URISyntaxException {
 
     input = cmd.getOptionValue("input");
-    AnalysisScope scope = ScopeUtils.createScope(input);
+    extraLibs = cmd.getOptionValue("extra-libs");
+    AnalysisScope scope = ScopeUtils.createScope(input, extraLibs);
+
     // Make class Heirarchy
     Log.info("Make class hierarchy.");
     try {
@@ -153,7 +164,7 @@ public class App2CallGraph {
         } catch (IOException e) {
           Log.error("Something went wrong");
         }
-        System.exit(0);
+        // System.exit(0);
       }
       // Initialize analysis options
       AnalysisOptions options = new AnalysisOptions();
@@ -161,13 +172,31 @@ public class App2CallGraph {
       options.setEntrypoints(entryPoints);
       options.getSSAOptions().setDefaultValues(SymbolTable::getDefaultValue);
       options.setReflectionOptions(ReflectionOptions.NONE);
-      IAnalysisCacheView cache = new AnalysisCacheImpl(AstIRFactory.makeDefaultFactory(), options.getSSAOptions());
+      IAnalysisCacheView cache = new AnalysisCacheImpl(AstIRFactory.makeDefaultFactory(),
+          options.getSSAOptions());
 
       // Build the call graph
       Log.info("Building call graph.");
       long start_time = System.currentTimeMillis();
-      // TODO: Make the context sensitivity configurable
-      CallGraphBuilder<?> builder = new ZeroOneCFABuilderFactory().make(options, cache, cha);
+
+      String ctxMode = cmd.getOptionValue("context-mode");
+      ctxMode = ctxMode == null ? "rta" : ctxMode;
+      // Select context sensititvity mode
+      CallGraphBuilder<?> builder = Util.makeRTABuilder(options, cache, cha);
+
+      if (cmd.getOptionValue("context-mode").toLowerCase().equals("zero")) {
+        Log.info("Using ZeroCFA.");
+        builder = new ZeroCFABuilderFactory().make(options, cache, cha);
+      } else if (cmd.getOptionValue("context-mode").toLowerCase().equals("zero-one")) {
+        Log.info("Using ZeroOneCFA.");
+        builder = new ZeroOneCFABuilderFactory().make(options, cache, cha);
+      } else if (cmd.getOptionValue("context-mode").toLowerCase().equals("rta")) {
+        Log.info("Using RTA.");
+        builder = Util.makeRTABuilder(options, cache, cha);
+      } else {
+        Log.info("No context mode specified, defaulting to RTA.");
+      }
+
       CallGraph callGraph = builder.makeCallGraph(options, null);
       long end_time = System.currentTimeMillis();
       Log.done(
@@ -177,8 +206,9 @@ public class App2CallGraph {
 
       // Save call graph
       outDir = cmd.getOptionValue("output");
-      saveCallGraph(callGraph, outDir, "call_graph.json");
-      Log.info("Saving graph to " + (new File(outDir, "call_graph.json")).getAbsolutePath().toString() + ".");
+      saveCallGraph(callGraph, outDir, "call_graph_" + ctxMode + ".json");
+      Log.info("Saving graph to " + (new File(outDir,
+          "call_graph_" + ctxMode + ".json")).getAbsolutePath().toString() + ".");
     } catch (ClassHierarchyException | IllegalArgumentException | NullPointerException
         | CallGraphBuilderCancelException che) {
       che.printStackTrace();
@@ -201,7 +231,8 @@ public class App2CallGraph {
       num_static_methods += method.isStatic() ? 1 : 0;
     }
 
-    return new CallGraphNode(className, isPrivateClass, num_fields, num_static_fields, num_instance_fields,
+    return new CallGraphNode(className, isPrivateClass, num_fields,
+        num_static_fields, num_instance_fields,
         num_static_methods, num_static_methods);
 
   }
@@ -218,7 +249,8 @@ public class App2CallGraph {
       Iterator<CallSiteReference> outGoingCalls = entrypointNode.iterateCallSites();
       for (Iterator<CallSiteReference> it = outGoingCalls; it.hasNext();) {
         CallSiteReference callSiteReference = it.next();
-        for (CGNode callTarget : callGraph.getPossibleTargets(entrypointNode, callSiteReference)) {
+        for (CGNode callTarget : callGraph.getPossibleTargets(entrypointNode,
+            callSiteReference)) {
           if (AnalysisUtils.isApplicationClass(callTarget.getMethod().getDeclaringClass())) {
             // Create a node for the source class
             IClass sourceClass = entryMethod.getDeclaringClass();
@@ -240,7 +272,8 @@ public class App2CallGraph {
             CallGraphEdge cgEdge = graph.getEdge(source, target);
             // If no edge exists, then create one...
             if (cgEdge == null) {
-              CallGraphEdge edge = new CallGraphEdge(entryMethod.getName(), callTarget.getMethod().getName(), 1.0);
+              CallGraphEdge edge = new CallGraphEdge(entryMethod.getName(),
+                  callTarget.getMethod().getName(), 1.0);
               graph.addEdge(source, target, edge);
             }
             // If edge exists, then increment the weight
@@ -264,12 +297,18 @@ public class App2CallGraph {
     JSONExporter<CallGraphNode, CallGraphEdge> exporter = new JSONExporter<>(v -> v.className);
     exporter.setVertexAttributeProvider((v) -> {
       Map<String, Attribute> map = new LinkedHashMap<>();
-      map.put("is_class_private", DefaultAttribute.createAttribute(v.getIsPrivate()));
-      map.put("num_total_fields", DefaultAttribute.createAttribute(v.getNum_fields()));
-      map.put("num_static_fields", DefaultAttribute.createAttribute(v.getNum_static_fields()));
-      map.put("num_instance_fields", DefaultAttribute.createAttribute(v.getNum_instance_fields()));
-      map.put("num_total_methods", DefaultAttribute.createAttribute(v.getNum_declared_methods()));
-      map.put("num_static_methods", DefaultAttribute.createAttribute(v.getNum_static_methods()));
+      map.put("is_class_private",
+          DefaultAttribute.createAttribute(v.getIsPrivate()));
+      map.put("num_total_fields",
+          DefaultAttribute.createAttribute(v.getNum_fields()));
+      map.put("num_static_fields",
+          DefaultAttribute.createAttribute(v.getNum_static_fields()));
+      map.put("num_instance_fields",
+          DefaultAttribute.createAttribute(v.getNum_instance_fields()));
+      map.put("num_total_methods",
+          DefaultAttribute.createAttribute(v.getNum_declared_methods()));
+      map.put("num_static_methods",
+          DefaultAttribute.createAttribute(v.getNum_static_methods()));
       return map;
     });
     exporter.setEdgeAttributeProvider((e) -> {

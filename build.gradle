@@ -2,7 +2,7 @@ apply plugin: 'java-library'
 apply plugin: 'application'
 apply plugin: 'eclipse'
 
-sourceCompatibility = 1.11
+sourceCompatibility = 1.8
 version = '1.0-dev'
 
 repositories {
@@ -64,7 +64,7 @@ dependencies {
 }
 
 task fatjar(type: Jar) {
-    archiveBaseName = 'code2graph'
+    archiveBaseName = 'codenet-miverva-app2callgraph'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     manifest {
         attributes  'Implementation-Title': 'Konveyor Code2graph',
