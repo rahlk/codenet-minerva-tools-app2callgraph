@@ -105,7 +105,7 @@ public class App2CallGraph {
         System.exit(0);
       }
       if (cmd.hasOption("experimental")) {
-        Log.warn("Using experimental mode. There will be dump of *.txt files.");
+        Log.warn("Using experimental mode. There will be an additional classes_in_class_hierarchy.txt the output folder.");
       }
       if (cmd.hasOption("quiet")) {
         Log.setVerbosity(false);
@@ -153,19 +153,7 @@ public class App2CallGraph {
       // Create class hierarchy
       IClassHierarchy cha = ClassHierarchyFactory.make(scope, new ECJClassLoaderFactory(scope.getExclusions()));
       Log.done("Done class hierarchy: " + cha.getNumberOfClasses() + " classes");
-      if (cmd.hasOption("experimental")) {
-        try (FileWriter writer = new FileWriter("classes_in_class_heirarchy.txt")) {
-          for (IClass c : cha) {
-            if (AnalysisUtils.isApplicationClass(c))
-              writer.write(c.getName() + "\n");
-          }
-        } catch (FileNotFoundException e) {
-          throw e;
-        } catch (IOException e) {
-          Log.error("Something went wrong");
-        }
-        // System.exit(0);
-      }
+
       // Initialize analysis options
       AnalysisOptions options = new AnalysisOptions();
       Iterable<Entrypoint> entryPoints = AnalysisUtils.getEntryPoints(cha);
@@ -180,22 +168,29 @@ public class App2CallGraph {
       long start_time = System.currentTimeMillis();
 
       String ctxMode = cmd.getOptionValue("context-mode");
-      ctxMode = ctxMode == null ? "rta" : ctxMode;
-      // Select context sensititvity mode
-      CallGraphBuilder<?> builder = Util.makeRTABuilder(options, cache, cha);
+      // Select context sensitivity mode
+      CallGraphBuilder<?> builder = null;
 
-      if (cmd.getOptionValue("context-mode").toLowerCase().equals("zero")) {
-        Log.info("Using ZeroCFA.");
-        builder = new ZeroCFABuilderFactory().make(options, cache, cha);
-      } else if (cmd.getOptionValue("context-mode").toLowerCase().equals("zero-one")) {
-        Log.info("Using ZeroOneCFA.");
-        builder = new ZeroOneCFABuilderFactory().make(options, cache, cha);
-      } else if (cmd.getOptionValue("context-mode").toLowerCase().equals("rta")) {
-        Log.info("Using RTA.");
-        builder = Util.makeRTABuilder(options, cache, cha);
+      if (ctxMode != null) {
+        if (ctxMode.toLowerCase().equals("zero")) {
+          Log.info("Using ZeroCFA.");
+          builder = new ZeroCFABuilderFactory().make(options, cache, cha);
+        } else if (ctxMode.toLowerCase().equals("zero-one")) {
+          Log.info("Using ZeroOneCFA.");
+          builder = new ZeroOneCFABuilderFactory().make(options, cache, cha);
+        } else if (ctxMode.toLowerCase().equals("rta")) {
+          Log.info("Using RTA.");
+          builder = Util.makeRTABuilder(options, cache, cha);
+        } else {
+          Log.error("Context mode " + ctxMode + " is not recognized. Choose one of RTA, Zero, Zero-One.");
+          throw new IllegalArgumentException();
+        }
       } else {
-        Log.info("No context mode specified, defaulting to RTA.");
-      }
+          Log.info("No context mode specified, defaulting to RTA.");
+          ctxMode = "rta";
+          builder = Util.makeRTABuilder(options, cache, cha);
+        }
+
 
       CallGraph callGraph = builder.makeCallGraph(options, null);
       long end_time = System.currentTimeMillis();
@@ -209,6 +204,21 @@ public class App2CallGraph {
       saveCallGraph(callGraph, outDir, "call_graph_" + ctxMode + ".json");
       Log.info("Saving graph to " + (new File(outDir,
           "call_graph_" + ctxMode + ".json")).getAbsolutePath().toString() + ".");
+
+      // Experiment mode dump...
+      if (cmd.hasOption("experimental")) {
+        try (FileWriter writer = new FileWriter(new File( outDir, "classes_in_class_hierarchy.txt"))) {
+          for (IClass c : cha) {
+            if (AnalysisUtils.isApplicationClass(c))
+              writer.write(c.getName() + "\n");
+          }
+        } catch (FileNotFoundException e) {
+          throw e;
+        } catch (IOException e) {
+          Log.error("Something went wrong");
+        }
+        // System.exit(0);
+      }
     } catch (ClassHierarchyException | IllegalArgumentException | NullPointerException
         | CallGraphBuilderCancelException che) {
       che.printStackTrace();
@@ -268,7 +278,7 @@ public class App2CallGraph {
             // Add the vertices to the final graph
             graph.addVertex(source);
             graph.addVertex(target);
-            // Get the edge between the source and the traget
+            // Get the edge between the source and the target
             CallGraphEdge cgEdge = graph.getEdge(source, target);
             // If no edge exists, then create one...
             if (cgEdge == null) {

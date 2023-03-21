@@ -20,16 +20,20 @@ import com.ibm.wala.ipa.callgraph.AnalysisScope;
 import com.ibm.wala.properties.WalaProperties;
 import com.ibm.wala.types.ClassLoaderReference;
 import com.ibm.wala.util.config.FileOfClasses;
+import org.apache.commons.io.FileUtils;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.jar.JarFile;
 
 public class ScopeUtils {
@@ -59,18 +63,6 @@ public class ScopeUtils {
     }
     setStdLibs(stdlibs);
 
-    // ---------------------
-    // Add JEE jars to scope
-    // ---------------------
-    Log.info("Loading JavaEE standard libs.");
-    URL url = ScopeUtils.class.getClassLoader().getResource("libs");
-    String jeeJarPath = url.getPath();
-    File[] jeeJarFiles = new File(jeeJarPath).listFiles();
-    for (File jarFile : jeeJarFiles) {
-      Log.info("↪ Adding " + jarFile + " to scope.");
-      scope.addToScope(ClassLoaderReference.Primordial, new JarFile(jarFile.getAbsolutePath()));
-    }
-
     // -------------------------------------
     // Add extra user provided JARS to scope
     // -------------------------------------
@@ -85,8 +77,11 @@ public class ScopeUtils {
       Log.warn("No extra libraries to process.");
     }
 
-    String tmpDirString = System.getProperty("java.io.tmpdir");
+    Path path = Paths.get(FileUtils.getTempDirectory().getAbsolutePath(), UUID.randomUUID().toString());
+    String tmpDirString = Files.createDirectories(path).toFile().getAbsolutePath();
     Path workDir = Paths.get(tmpDirString);
+//    Log.debug("Unpacking *.{jar, war, ear} to " + workDir);
+    FileUtils.cleanDirectory(workDir.toFile());
     List<String> classRoots = new ArrayList<>();
     List<String> jars = new ArrayList<>();
 

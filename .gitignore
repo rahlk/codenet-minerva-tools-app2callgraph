@@ -138,9 +138,11 @@ fabric.properties
 *.rar
 
 # Don't ignore the demo binaries
-!etc/demo/jar/*.jar
-!etc/demo/ear/*.ear
-!etc/demo/war/*.war
+!etc/demo/**/
+!etc/demo/**/*.jar
+!etc/demo/**/*.ear
+!etc/demo/**/*.war
+!etc/demo/**/*.txt
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
