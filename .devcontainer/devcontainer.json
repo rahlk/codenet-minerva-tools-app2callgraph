@@ -1,0 +1,18 @@
+{
+  "name": "app2callgraph",
+  "dockerComposeFile": ["docker-compose.yml"],
+  "service": "workspace",
+  "workspaceFolder": "/home/workspace",
+  "remoteUser": "dev",
+  "shutdownAction": "stopCompose",
+  "customizations": {
+		"vscode": {
+			"settings": {},
+			"extensions": [
+				"vscjava.vscode-java-pack",
+				"vscjava.vscode-spring-initializr",
+				"vscjava.vscode-gradle"
+			]		
+		}
+	}
+}
